@@ -335,7 +335,7 @@ class Pawn extends Piece{
         nextMoves.add(current.add(direction,0));
         if((getColor() == B && current.r == 1) ||
            (getColor() == W && current.r == 6)) {
-                nextMoves.add(current.add(direction * 2, 1));
+                nextMoves.add(current.add(direction * 2, 0));
         }
         Location left = current.add(direction, -1);
         Location right = current.add(direction, 1);

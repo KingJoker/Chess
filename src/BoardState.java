@@ -10,6 +10,7 @@ public class BoardState {
     private static final int DEPTH = 4;
     int turn;
     Set<BoardState> nextStates;
+    static int cacheHits = 0;
     static{
         states = new ConcurrentHashMap<>();
     }
@@ -29,9 +30,10 @@ public class BoardState {
     public int nextTurn(){
         return (turn == Piece.B)? Piece.W:Piece.B;
     }
-    public void computeNextStates(){
-        if(nextStates != null)
+    public synchronized void computeNextStates(){
+        if(nextStates != null) {
             return;
+        }
         nextStates = Collections.synchronizedSet(new HashSet<>());
         board.pieceLocations(turn).parallel().flatMap(location -> {
                     Stream.Builder<Move> moves = Stream.builder();
@@ -69,11 +71,13 @@ public class BoardState {
             return board.getHeuristicSum(color);
         }
         computeNextStates();
-        return nextStates.parallelStream().mapToDouble(boardState -> getHeuristicSumDepth(color,depth-1)).average().orElse(0);
+        return nextStates.parallelStream().mapToDouble(boardState -> boardState.getHeuristicSumDepth(color,depth-1)).average().orElse(0);
     }
 
-    public BoardState state(Board board, int turn){
+    public static BoardState state(Board board, int turn){
         BoardState temp = new BoardState(board,turn);
+        if(states.containsKey(temp))
+            cacheHits++;
         return states.computeIfAbsent(temp, bs -> bs );
     }
 
